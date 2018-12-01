@@ -98,7 +98,7 @@
     ).css('background-position-x', `${l}%`);
 
     if (flag != 'dont-update-hex') {
-      $('#txt_hex'+n).val('#' + tinycolor(`hsl(${h},${s}%,${l}%)`).toHex());
+      $('#txt_hex'+n).val(tinycolor(`hsl(${h},${s}%,${l}%)`).toHexString());
     };
 
     demo();
@@ -106,8 +106,8 @@
   }
 
   function contrastratio() {
-    var c1 = $('#txt_hex1').val();
-    var c2 = $('#txt_hex2').val();
+    var c1 = tinycolor($('#txt_hex1').val()).toString();
+    var c2 = tinycolor($('#txt_hex2').val()).toString();
     var contrastratio = Number.parseFloat(tinycolor.readability(c1, c2)).toFixed(2);
     $('#ratio').val(contrastratio);
     update_ratio_cursor(contrastratio);
@@ -119,8 +119,8 @@
   }
 
   function demo() {
-    var c1 = $('#txt_hex1').val();
-    var c2 = $('#txt_hex2').val();
+    var c1 = tinycolor($('#txt_hex1').val()).toString();
+    var c2 = tinycolor($('#txt_hex2').val()).toString();
     $('.colordemo').css({'color': c1, 'background': c2});
     $('.colordemo_inverse').css({'color': c2, 'background': c1});
   }
