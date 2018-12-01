@@ -25,7 +25,6 @@
       var percent_bgcolor = ratio_percent($sr, $sr.val());
       $sr.css('background-position-x', `${percent_cursor}%`);
       var color = (1*value >= 1*$sr.val()) ? "seagreen" : "crimson";
-      console.log(value, $sr.val());
       update_gradient(
         $sr,
         `linear-gradient(to right, ${color} 0%, ${color} ${percent_bgcolor}%, whitesmoke ${percent_bgcolor + 0.001}%, whitesmoke 100%)`
