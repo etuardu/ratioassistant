@@ -1,0 +1,295 @@
+<!DOCTYPE HTML>
+
+<html>
+
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<title>Color contrast ratio assistant - Adjust colors to meet WCAG 2.0 requirements</title>
+  <script
+    src="https://code.jquery.com/jquery-3.3.1.min.js"
+    integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+    crossorigin="anonymous"></script>
+  <script src="tinycolor.js"></script>
+  <script>
+
+  function ratio_percent(elem, value) {
+      var min = elem.attr('min');
+      var max = elem.attr('max');
+      return (value - min) * 100 / (max - min);
+  }
+
+  function update_ratio_cursor(value) {
+    $('.subratio').each(function(i) {
+      $sr = $(this);
+      var percent_cursor = ratio_percent($sr, value);
+      var percent_bgcolor = ratio_percent($sr, $sr.val());
+      $sr.css('background-position-x', `${percent_cursor}%`);
+      var color = (1*value >= 1*$sr.val()) ? "seagreen" : "crimson";
+      console.log(value, $sr.val());
+      update_gradient(
+        $sr,
+        `linear-gradient(to right, ${color} 0%, ${color} ${percent_bgcolor}%, whitesmoke ${percent_bgcolor + 0.001}%, whitesmoke 100%)`
+      );
+    });
+  }
+
+  $(document).ready(function(){
+
+    $('.scrollable').on('input', function(e) {
+      repaint($(e.target).data('colorindex'));
+    });
+
+    $('.scrollable:not([readonly])').on('mousewheel', function(e) {
+      e.preventDefault();
+      var $elem = $(e.target);
+      var val = $elem.val();
+      if (e.originalEvent.wheelDelta/120 > 0) {
+        val++;
+      }
+      else {
+        val--;
+      }
+      if ((val <= $elem.attr('max')) && (val >= $elem.attr('min'))) {
+        $elem.val(val);
+        repaint($elem.data('colorindex'));
+      }
+    });
+
+    $('.colorhex').on('input', function(e) {
+      var n = $(e.target).data('colorindex');
+      var col = tinycolor($(e.target).val());
+      var c = col.toHsl();
+      $('#txt_h'+n).val(Math.floor(c['h']));
+      $('#txt_s'+n).val(Math.floor(c['s']*100));
+      $('#txt_l'+n).val(Math.floor(c['l']*100));
+      repaint(n, 'dont-update-hex');
+    }).trigger('input');
+
+  });
+
+  function update_gradient(elem, gradient) {
+    elem.css('background-image', function(i, val) {
+      // val = "url(...), linear-gradient(...)"
+      return val.substr(0, val.indexOf('linear-gradient')) + gradient;
+    }); 
+    return elem;
+  }
+
+  function repaint(n, flag) {
+    var h = $('#txt_h'+n).val();
+    var s = $('#txt_s'+n).val();
+    var l = $('#txt_l'+n).val();
+
+    $('#palette'+n).css('background-color', `hsl(${h},${s}%,${l}%)`);
+
+    update_gradient(
+      $('#txt_h'+n),
+      `linear-gradient(to right, #F00 0%, #FF0 16.66%, #0F0 33.33%, #0FF 50%, #00F 66.66%, #F0F 83.33%, #F00 100%)`
+    ).css('background-position-x', `${h*100/360}%`);
+
+    update_gradient(
+      $('#txt_s'+n),
+      `linear-gradient(to right, hsl(${h},0%,${l}%), hsl(${h},100%,${l}%)`
+    ).css('background-position-x', `${s}%`);
+
+    update_gradient(
+      $('#txt_l'+n),
+      `linear-gradient(to right, #000, hsl(${h},${s}%,50%), #fff`
+    ).css('background-position-x', `${l}%`);
+
+    if (flag != 'dont-update-hex') {
+      $('#txt_hex'+n).val('#' + tinycolor(`hsl(${h},${s}%,${l}%)`).toHex());
+    };
+
+    demo();
+    contrastratio();
+  }
+
+  function contrastratio() {
+    var c1 = $('#txt_hex1').val();
+    var c2 = $('#txt_hex2').val();
+    var contrastratio = Number.parseFloat(tinycolor.readability(c1, c2)).toFixed(2);
+    $('#ratio').val(contrastratio);
+    update_ratio_cursor(contrastratio);
+    
+    $('#paletteRatio').css(
+      'background',
+      `linear-gradient(45deg, ${c1} 0%, ${c1} 50%, ${c2} 50.001%, ${c2} 100%)`
+    );
+  }
+
+  function demo() {
+    var c1 = $('#txt_hex1').val();
+    var c2 = $('#txt_hex2').val();
+    $('.colordemo').css({'color': c1, 'background': c2});
+    $('.colordemo_inverse').css({'color': c2, 'background': c1});
+  }
+  </script>
+  <style>
+
+  #content blockquote, #content ul {
+    overflow: hidden;
+  }
+
+  #assistant {
+    float: left;
+    font-family: sans;
+    color: #000;
+    width: 300px;
+    min-width: 150px;
+    border: 1px solid black;
+    padding: 1em;
+    resize: horizontal;
+    overflow: auto;
+    background: #fff;
+    display: inline-block;
+    margin-right: 15pt;
+    margin-bottom: 15pt;
+  }
+
+  #assistant > div:not(:last-child) {
+    margin-bottom: 15pt;
+  }
+  
+  .colorbox_outer {
+    display: flex;
+  }
+  .colorbox {
+    flex: 1;
+  }
+
+  .biginput, .scrollable {
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  .biginput {
+    font-size: large;
+  }
+
+  .scrollable {
+    padding: 3px;
+    text-align: center;
+    text-shadow: #fff 1px 1px;
+    border: 0px;
+    background-repeat: repeat-y;
+    background-image:
+      url('data:image/gif;base64,R0lGODlhAgABAKEAAAAAAP///wAAAAAAACH5BAEAAAIALAAAAAACAAEAAAICRAoAOw=='),
+      linear-gradient(#fff, #fff)
+  }
+
+  .inputbox { position: relative }
+  .inputbox .inner {
+    position: absolute;
+    text-shadow: #fff 1px 1px;
+    margin-left: 0.25em;
+    font-size: 0.8em;
+  }
+
+  .palette {
+    width: 20px;
+    margin-right: 0.5em;
+  }
+  </style>
+</head>
+<body class="colordemo">
+
+<div id="assistant">
+
+  <div class="colorbox_outer">
+    <div id="palette1" class="palette"></div>
+    <div class="colorbox" id="color1">
+      <strong>Color 1</strong><br/>
+      <input type="text" id="txt_hex1" value="chocolate" class="colorhex biginput" data-colorindex="1"><br/>
+      <div class="inputbox">
+        <span class="inner">H</span>
+        <input type="number" min="0" max="360" id="txt_h1" class="scrollable" data-colorindex="1">
+      </div>
+      <div class="inputbox">
+        <span class="inner">S</span>
+        <input type="number" min="0" max="100" id="txt_s1" class="scrollable" data-colorindex="1">
+      </div>
+      <div class="inputbox">
+        <span class="inner">L</span>
+        <input type="number" min="0" max="100" id="txt_l1" class="scrollable" data-colorindex="1">
+      </div>
+    </div>
+  </div>
+
+  <div class="colorbox_outer">
+    <div id="palette2" class="palette"></div>
+    <div class="colorbox" id="color2">
+      <strong>Color 2</strong><br/>
+      <input type="text" id="txt_hex2" value="#061927" class="colorhex biginput" data-colorindex="2">
+      <div class="inputbox">
+        <span class="inner">H</span>
+        <input type="number" min="0" max="360" id="txt_h2" class="scrollable" data-colorindex="2">
+      </div>
+      <div class="inputbox">
+        <span class="inner">S</span>
+        <input type="number" min="0" max="100" id="txt_s2" class="scrollable" data-colorindex="2">
+      </div>
+      <div class="inputbox">
+        <span class="inner">L</span>
+        <input type="number" min="0" max="100" id="txt_l2" class="scrollable" data-colorindex="2">
+      </div>
+    </div>
+  </div>
+
+  <div class="colorbox_outer">
+    <div id="paletteRatio" class="palette"></div>
+    <div class="colorbox" id="color_contrast">
+      <strong>Contrast ratio</strong><br/>
+      <input type="text" id="ratio" readonly="true" class="biginput"><br/>
+      <div class="inputbox">
+        <span class="inner">AA18</span>
+        <input type="text" value="3.0" min="1" max="21" id="rAA18" class="scrollable subratio" readonly="true">
+      </div>
+      <div class="inputbox">
+        <span class="inner">AA</span>
+        <input type="text" value="4.5" min="1" max="21" id="rAA" class="scrollable subratio" readonly="true">
+      </div>
+      <div class="inputbox">
+        <span class="inner">AAA18</span>
+        <input type="text" value="4.5" min="1" max="21" id="rAAA18" class="scrollable subratio" readonly="true">
+      </div>
+      <div class="inputbox">
+        <span class="inner">AAA</span>
+        <input type="text" value="7.0" min="1" max="21" id="rAAA" class="scrollable subratio" readonly="true">
+      </div>
+    </div>
+  </div>
+
+</div> <!-- assistant -->
+
+<div id="content">
+  <header>
+    <h1>Color contrast ratio assistant</h1>
+    <p>A tool to adjust colors in order to meet the <a href="https://www.w3.org/TR/WCAG/#contrast-minimum" class="colordemo_inverse">WCAG 2.0</a> accessibility requirements about color contrast.</p>
+  </header>
+  <h2>How to use it</h2>
+  <ul>
+    <li>Type or paste colors in the color fields.</li>
+    <li>Adjust the colors using their hue, saturation and luminosity sliders.</li>
+    <li>Check the <i>Contrast ratio</i> sliders to see which levels are passed.
+      A trailing <span class="colordemo_inverse">18</span> in a level label means that the corresponding level is only met for large text of at least 18pt.</li>
+  </ul>
+
+  <blockquote class="colordemo_inverse">
+    <h3>Why another contrast ratio checker?</h3>
+    <p>There are plenty of similar projects around the web which are very well crafted and usually more beautiful than this one.
+    However the focus of <i>Color contrast ratio assistant</i> is about fine tuning the colors while having a visual feedback
+    about how much contrast is still needed to match the desired ratio.
+    </p>
+  </blockquote>
+
+  <p style="font-size:18pt">18pt looks like this, by the way</p>
+
+</div> <!-- content -->
+
+<footer>
+  <p><span style="display:inline-block;transform:rotateY(180deg)">&copy;</span> Edoardo Nannotti 2018</p>
+</p>
+
+</body>
+</html>
